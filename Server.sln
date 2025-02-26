@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35312.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{F10998CE-2136-4F48-B35B-1C0A91A35A1D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerCore", "ServerCore\ServerCore.csproj", "{70D0A61E-8BF5-4DC6-BE59-180D84C63D72}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DummyClient", "DummyClient\DummyClient.csproj", "{D1A6CF6B-C917-4A18-97BE-22540F87A104}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F10998CE-2136-4F48-B35B-1C0A91A35A1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F10998CE-2136-4F48-B35B-1C0A91A35A1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F10998CE-2136-4F48-B35B-1C0A91A35A1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F10998CE-2136-4F48-B35B-1C0A91A35A1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70D0A61E-8BF5-4DC6-BE59-180D84C63D72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70D0A61E-8BF5-4DC6-BE59-180D84C63D72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70D0A61E-8BF5-4DC6-BE59-180D84C63D72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70D0A61E-8BF5-4DC6-BE59-180D84C63D72}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1A6CF6B-C917-4A18-97BE-22540F87A104}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1A6CF6B-C917-4A18-97BE-22540F87A104}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1A6CF6B-C917-4A18-97BE-22540F87A104}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1A6CF6B-C917-4A18-97BE-22540F87A104}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1D610FC5-CD37-4555-B314-9D7840B75E3A}
+	EndGlobalSection
+EndGlobal
