@@ -17,26 +17,26 @@ internal class Program
         IPEndPoint endPoint = new IPEndPoint(ipAdr, 7777);
         Socket listenSocket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
+        _listener.Init(endPoint, OnAcceptHandler);
+
+        while (true)
+        {
+        }
+    }
+
+    private static void OnAcceptHandler(Socket clientSocket)
+    {
         try
         {
-            _listener.Init(endPoint);
+            byte[] readBuf = new byte[1024];
+            int recvBytes = clientSocket.Receive(readBuf);
+            string recvData = Encoding.UTF8.GetString(readBuf, 0, recvBytes);
+            Console.WriteLine($"Recv Data: {recvData}");
 
-            while (true)
-            {
-                Console.WriteLine("Litening...");
+            byte[] buf = Encoding.UTF8.GetBytes("Hello Server");
+            clientSocket.Send(buf);
 
-                Socket clientSocket = await _listener.AcceptAsync();
-
-                byte[] readBuf = new byte[1024];
-                int recvBytes = clientSocket.Receive(readBuf);
-                string recvData = Encoding.UTF8.GetString(readBuf, 0, recvBytes);
-                Console.WriteLine($"Recv Data: {recvData}");
-
-                byte[] buf = Encoding.UTF8.GetBytes("Hello Server");
-                clientSocket.Send(buf);
-
-                clientSocket.Close();
-            }
+            clientSocket.Close();
         }
         catch (Exception e)
         {
