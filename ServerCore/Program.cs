@@ -28,15 +28,14 @@ internal class Program
     {
         try
         {
-            byte[] readBuf = new byte[1024];
-            int recvBytes = clientSocket.Receive(readBuf);
-            string recvData = Encoding.UTF8.GetString(readBuf, 0, recvBytes);
-            Console.WriteLine($"Recv Data: {recvData}");
+            Session session = new Session();
+            session.Start(clientSocket);
 
             byte[] buf = Encoding.UTF8.GetBytes("Hello Server");
-            clientSocket.Send(buf);
+            session.Send(buf);
 
-            clientSocket.Close();
+            Thread.Sleep(1000);
+            session.Disconnect();
         }
         catch (Exception e)
         {
