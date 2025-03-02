@@ -1,13 +1,14 @@
 ﻿namespace ServerCore;
 
 using System.Collections.Concurrent;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
 /// <summary>
 /// Client와 1:1 매핑이 되는 클래스.
 /// </summary>
-internal class Session
+internal abstract class Session
 {
     private int _disconnected = 1;
 
@@ -28,8 +29,35 @@ internal class Session
     public void Disconnect()
     {
         if (Interlocked.Exchange(ref _disconnected, 1) == 0)
+        {
+            OnDisconnected(_socket.RemoteEndPoint);
             _socket.Close();
+        }
     }
+
+    /// <summary>
+    /// Client가 연결되었을 때 호출되는 함수.
+    /// </summary>
+    /// <param name="endPoint">연결이 된 상대 정보.</param>
+    public abstract void OnConnected(EndPoint endPoint);
+
+    /// <summary>
+    /// Client와 연결이 끊겼을 때 호출되는 함수.
+    /// </summary>
+    /// <param name="endPoint">연결이 끊긴 상대 정보.</param>
+    public abstract void OnDisconnected(EndPoint endPoint);
+
+    /// <summary>
+    /// Client로부터 데이터를 수신 했을 때 호출되는 함수.
+    /// </summary>
+    /// <param name="recvData">수신한 데이터.</param>
+    public abstract void OnRecv(ArraySegment<byte> recvData);
+
+    /// <summary>
+    /// Client에게 데이터 송신을 완료했을 때 호출되는 함수
+    /// </summary>
+    /// <param name="byteOfTransferred">송신한 데이터 크기.</param>
+    public abstract void OnSend(int byteOfTransferred);
 
     /// <summary>
     /// 컨텐츠에서 송신을 요청할 때 호출되는 함수.
@@ -76,9 +104,7 @@ internal class Session
         {
             try
             {
-                string recvData = Encoding.UTF8.GetString(args.Buffer!, args.Offset, args.BytesTransferred);
-                Console.WriteLine($"Recv Data: {recvData}");
-
+                OnRecv(new ArraySegment<byte>(args.Buffer!, 0, args.BytesTransferred));
                 RegisterRecv();
             }
             catch (Exception e)
@@ -105,6 +131,7 @@ internal class Session
         {
             try
             {
+                OnSend(args.BytesTransferred);
                 _sendList.Clear();
 
                 if (_sendQueue.Count > 0)

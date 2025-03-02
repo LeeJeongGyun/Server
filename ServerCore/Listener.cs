@@ -9,16 +9,19 @@ using System.Net.Sockets;
 internal class Listener
 {
     private Socket _listenSocket = null!;
-    private Action<Socket> _onAcceptHandler = null!;
+    private Func<Session> _sessionFactory = null!;
 
     /// <summary>
     /// Listener를 초기화합니다.
     /// </summary>
     /// <param name="endPoint">바인딩할 IP 엔드포인트.</param>
-    /// <param name="acceptHandler">연결을 처리할 콜백 함수.</param>
-    public void Init(IPEndPoint endPoint, Action<Socket> acceptHandler)
+    /// <param name="sessionFactory">Session 생성 팩토리.</param>
+    /// <remarks>
+    ///     엔진 내부에서는 외부에서 어떤 Session을 생성하는 지 알 지 못하기 때문에 SessionFactory를 받아준다.
+    /// </remarks>
+    public void Init(IPEndPoint endPoint, Func<Session> sessionFactory)
     {
-        _onAcceptHandler = acceptHandler;
+        _sessionFactory = sessionFactory;
         _listenSocket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         _listenSocket.Bind(endPoint);
         _listenSocket.Listen();
@@ -37,7 +40,10 @@ internal class Listener
     {
         if (args.SocketError == SocketError.Success)
         {
-            _onAcceptHandler.Invoke(args.AcceptSocket!);
+            // 엔진에서는 외부에서 어떤 세션을 생성할 지 모르기 때문에 Factory를 이용하여 생성한다.
+            Session session = _sessionFactory.Invoke();
+            session.Start(args.AcceptSocket!);
+            session.OnConnected(args.AcceptSocket!.RemoteEndPoint!);
         }
         else
         {

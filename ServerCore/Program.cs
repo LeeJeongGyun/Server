@@ -4,12 +4,43 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
+internal class GameSession : Session
+{
+    /// <inheritdoc/>
+    public override void OnConnected(EndPoint endPoint)
+    {
+        byte[] buf = Encoding.UTF8.GetBytes("Hello Server");
+        Send(buf);
+
+        Thread.Sleep(1000);
+        Disconnect();
+    }
+
+    /// <inheritdoc/>
+    public override void OnDisconnected(EndPoint endPoint)
+    {
+        Console.WriteLine($"[SERVER] Client Disconnected: {endPoint}");
+    }
+
+    /// <inheritdoc/>
+    public override void OnRecv(ArraySegment<byte> recvData)
+    {
+        string data = Encoding.UTF8.GetString(recvData.Array!, recvData.Offset, recvData.Count);
+        Console.WriteLine($"Recv Data: {data}");
+    }
+
+    /// <inheritdoc/>
+    public override void OnSend(int byteOfTransferred)
+    {
+        Console.WriteLine("[SERVER] Send Completed");
+    }
+}
+
 internal class Program
 {
     private static Listener _listener = new Listener();
-    private static int number = 0;
 
-    private static async Task Main(string[] args)
+    private static void Main(string[] args)
     {
         IPHostEntry ipHostEntry = Dns.GetHostEntry(Dns.GetHostName());
 
@@ -17,30 +48,10 @@ internal class Program
         IPEndPoint endPoint = new IPEndPoint(ipAdr, 7777);
         Socket listenSocket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-        _listener.Init(endPoint, OnAcceptHandler);
+        _listener.Init(endPoint, () => { return new GameSession(); });
 
         while (true)
         {
-        }
-    }
-
-    private static void OnAcceptHandler(Socket clientSocket)
-    {
-        try
-        {
-            Session session = new Session();
-            session.Start(clientSocket);
-
-            byte[] buf = Encoding.UTF8.GetBytes("Hello Server");
-            session.Send(buf);
-
-            Thread.Sleep(1000);
-            session.Disconnect();
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e.ToString());
-            throw;
         }
     }
 }
