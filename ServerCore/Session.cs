@@ -1,5 +1,6 @@
 ﻿namespace ServerCore;
 
+using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Text;
 
@@ -10,6 +11,12 @@ internal class Session
 {
     private int _disconnected = 1;
 
+    private object _lockObject = new object();
+    private SocketAsyncEventArgs _recvArgs = new SocketAsyncEventArgs();
+    private SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs();
+    private long _sendFlag = 0;
+    private List<ArraySegment<byte>> _sendList = new List<ArraySegment<byte>>();
+    private Queue<byte[]> _sendQueue = new Queue<byte[]>();
     private Socket _socket = null!;
 
     /// <summary>
@@ -24,10 +31,17 @@ internal class Session
             _socket.Close();
     }
 
-    // 임시 처리
+    /// <summary>
+    /// 컨텐츠에서 송신을 요청할 때 호출되는 함수.
+    /// </summary>
+    /// <param name="sendBuf">전송할 데이터를 담은 버퍼.</param>
     public void Send(byte[] sendBuf)
     {
-        _socket.Send(sendBuf);
+        lock (_lockObject)
+            _sendQueue.Enqueue(sendBuf);
+
+        if (Interlocked.Exchange(ref _sendFlag, 1) == 0)
+            RegisterSend();
     }
 
     /// <summary>
@@ -42,11 +56,11 @@ internal class Session
         _disconnected = 0;
         _socket = socket;
 
-        SocketAsyncEventArgs recvArgs = new SocketAsyncEventArgs();
-        recvArgs.Completed += OnCompletedRecv;
-        recvArgs.SetBuffer(new byte[1024], 0, 1024);
+        _recvArgs.Completed += OnCompletedRecv;
+        _recvArgs.SetBuffer(new byte[1024], 0, 1024);
 
-        RegisterRecv(recvArgs);
+        _sendArgs.Completed += OnCompletedSend;
+        RegisterRecv();
     }
 
     #region 네트워크 통신
@@ -65,7 +79,7 @@ internal class Session
                 string recvData = Encoding.UTF8.GetString(args.Buffer!, args.Offset, args.BytesTransferred);
                 Console.WriteLine($"Recv Data: {recvData}");
 
-                RegisterRecv(args);
+                RegisterRecv();
             }
             catch (Exception e)
             {
@@ -75,19 +89,75 @@ internal class Session
         }
         else
         {
-            // TODO DISCONNECT
+            Disconnect();
+        }
+    }
+
+    /// <summary>
+    /// 비동기 Send 완료 시 호출될 Callback 함수.
+    /// SendQueue에 데이터가 있다면 내가 다시 보낸다.
+    /// </summary>
+    /// <param name="sender">해당 함수를 호출한 객체 정보.</param>
+    /// <param name="args">연결된 소켓 정보를 가지고 있는 인자.</param>
+    private void OnCompletedSend(object? sender, SocketAsyncEventArgs args)
+    {
+        if (args.BytesTransferred > 0 && args.SocketError == SocketError.Success)
+        {
+            try
+            {
+                _sendList.Clear();
+
+                if (_sendQueue.Count > 0)
+                    RegisterSend();
+                else
+                    _sendFlag = 0;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                throw;
+            }
+        }
+        else
+        {
+            Disconnect();
         }
     }
 
     /// <summary>
     /// Recv 등록 함수.
     /// </summary>
-    /// <param name="args"><see cref="Start"/> 함수에서 세팅된 인자.</param>
-    private void RegisterRecv(SocketAsyncEventArgs args)
+    private void RegisterRecv()
     {
-        bool pending = _socket.ReceiveAsync(args);
+        bool pending = _socket.ReceiveAsync(_recvArgs);
         if (!pending)
-            OnCompletedRecv(null, args);
+            OnCompletedRecv(null, _recvArgs);
+    }
+
+    /// <summary>
+    /// Send 등록 함수.
+    /// </summary>
+    /// <remarks>
+    ///     BufferList 사용 시 Property의 Add 함수를 사용하지 않고, 리스트를 세팅한 후 대입 연산을 이용해야 된다.
+    ///     https://stackoverflow.com/questions/11820677/how-use-bufferlist-with-socketasynceventargs-and-not-get-socketerror-invalidargu.
+    ///     해당 링크에서 나와있듯, 내부에서 WSABUF[] 배열을 사용할 때 문제가 발생될 수 있다고 한다.
+    /// </remarks>
+    private void RegisterSend()
+    {
+        lock (_lockObject)
+        {
+            // TODO: Queue에 데이터가 너무 많다면 나눠서 보내는 것도 고려해야 된다.
+            while (_sendQueue.Count > 0)
+            {
+                _sendList.Add(new ArraySegment<byte>(_sendQueue.Dequeue()));
+            }
+        }
+
+        _sendArgs.BufferList = _sendList;
+
+        bool pending = _socket.SendAsync(_sendArgs);
+        if (!pending)
+            OnCompletedSend(null, _sendArgs);
     }
 
     #endregion 네트워크 통신
