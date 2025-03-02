@@ -8,7 +8,7 @@ using System.Text;
 /// <summary>
 /// Client와 1:1 매핑이 되는 클래스.
 /// </summary>
-internal abstract class Session
+public abstract class Session
 {
     private int _disconnected = 1;
 
@@ -32,6 +32,7 @@ internal abstract class Session
         {
             OnDisconnected(_socket.RemoteEndPoint);
             _socket.Close();
+            _socket = null;
         }
     }
 
@@ -65,6 +66,9 @@ internal abstract class Session
     /// <param name="sendBuf">전송할 데이터를 담은 버퍼.</param>
     public void Send(byte[] sendBuf)
     {
+        if (_socket == null)
+            return;
+
         lock (_lockObject)
             _sendQueue.Enqueue(sendBuf);
 

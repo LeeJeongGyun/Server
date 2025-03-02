@@ -6,7 +6,7 @@ using System.Net.Sockets;
 /// <summary>
 /// 비동기 Accept를 담당할 클래스.
 /// </summary>
-internal class Listener
+public class Listener
 {
     private Socket _listenSocket = null!;
     private Func<Session> _sessionFactory = null!;
