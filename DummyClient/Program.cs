@@ -24,9 +24,10 @@
         }
 
         /// <inheritdoc/>
-        public override void OnRecv(ArraySegment<byte> recvData)
+        public override int OnRecv(ArraySegment<byte> recvData)
         {
             Console.WriteLine($"[CLIENT] RecvData: {Encoding.UTF8.GetString(recvData)}");
+            return recvData.Count;
         }
 
         /// <inheritdoc/>

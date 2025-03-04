@@ -24,10 +24,11 @@ internal class GameSession : Session
     }
 
     /// <inheritdoc/>
-    public override void OnRecv(ArraySegment<byte> recvData)
+    public override int OnRecv(ArraySegment<byte> recvData)
     {
         string data = Encoding.UTF8.GetString(recvData.Array!, recvData.Offset, recvData.Count);
         Console.WriteLine($"Recv Data: {data}");
+        return recvData.Count;
     }
 
     /// <inheritdoc/>

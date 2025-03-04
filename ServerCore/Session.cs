@@ -14,6 +14,7 @@ public abstract class Session
 
     private object _lockObject = new object();
     private SocketAsyncEventArgs _recvArgs = new SocketAsyncEventArgs();
+    private RecvBuffer _recvBuffer = new RecvBuffer(1024);
     private SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs();
     private long _sendFlag = 0;
     private List<ArraySegment<byte>> _sendList = new List<ArraySegment<byte>>();
@@ -52,7 +53,8 @@ public abstract class Session
     /// Client로부터 데이터를 수신 했을 때 호출되는 함수.
     /// </summary>
     /// <param name="recvData">수신한 데이터.</param>
-    public abstract void OnRecv(ArraySegment<byte> recvData);
+    /// <returns>처리한 데이터 크기.</returns>
+    public abstract int OnRecv(ArraySegment<byte> recvData);
 
     /// <summary>
     /// Client에게 데이터 송신을 완료했을 때 호출되는 함수
@@ -89,9 +91,8 @@ public abstract class Session
         _socket = socket;
 
         _recvArgs.Completed += OnCompletedRecv;
-        _recvArgs.SetBuffer(new byte[1024], 0, 1024);
-
         _sendArgs.Completed += OnCompletedSend;
+
         RegisterRecv();
     }
 
@@ -108,7 +109,30 @@ public abstract class Session
         {
             try
             {
-                OnRecv(new ArraySegment<byte>(args.Buffer!, 0, args.BytesTransferred));
+                if (_recvBuffer.OnWrite(args.BytesTransferred) == false)
+                {
+                    // TODO: 추후 삭제, 절대 들어올 일 없음
+                    Console.WriteLine("OnCompletedRecv OnWrite Error");
+                    Disconnect();
+                    return;
+                }
+
+                int processLen = OnRecv(_recvBuffer.ReadSegment);
+                if (processLen < 0 || _recvBuffer.DataSize < processLen)
+                {
+                    Console.WriteLine("OnCompletedRecv OnRecv DataSize Error");
+                    Disconnect();
+                    return;
+                }
+
+                if (_recvBuffer.OnRead(processLen) == false)
+                {
+                    // TODO: 추후 삭제, 절대 들어올 일 없음
+                    Console.WriteLine("OnCompletedRecv OnRead Error");
+                    Disconnect();
+                    return;
+                }
+
                 RegisterRecv();
             }
             catch (Exception e)
@@ -160,6 +184,8 @@ public abstract class Session
     /// </summary>
     private void RegisterRecv()
     {
+        _recvArgs.SetBuffer(_recvBuffer.WriteSegment);
+
         bool pending = _socket.ReceiveAsync(_recvArgs);
         if (!pending)
             OnCompletedRecv(null, _recvArgs);
