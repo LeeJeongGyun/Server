@@ -18,7 +18,7 @@ public abstract class Session
     private SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs();
     private long _sendFlag = 0;
     private List<ArraySegment<byte>> _sendList = new List<ArraySegment<byte>>();
-    private Queue<byte[]> _sendQueue = new Queue<byte[]>();
+    private Queue<ArraySegment<byte>> _sendQueue = new Queue<ArraySegment<byte>>();
     private Socket _socket = null!;
 
     /// <summary>
@@ -66,7 +66,7 @@ public abstract class Session
     /// 컨텐츠에서 송신을 요청할 때 호출되는 함수.
     /// </summary>
     /// <param name="sendBuf">전송할 데이터를 담은 버퍼.</param>
-    public void Send(byte[] sendBuf)
+    public void Send(ArraySegment<byte> sendBuf)
     {
         if (_socket == null)
             return;
@@ -206,7 +206,7 @@ public abstract class Session
             // TODO: Queue에 데이터가 너무 많다면 나눠서 보내는 것도 고려해야 된다.
             while (_sendQueue.Count > 0)
             {
-                _sendList.Add(new ArraySegment<byte>(_sendQueue.Dequeue()));
+                _sendList.Add(_sendQueue.Dequeue());
             }
         }
 
