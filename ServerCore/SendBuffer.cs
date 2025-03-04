@@ -2,13 +2,13 @@
 
 public class SendBufferHelper
 {
-    private static int ChunkSize => 4069 * 10;
-
     /// <summary>
     ///     Lock을 걸지 않기 위하여 ThreadLocal을 사용.
     ///     현재 스레드가 가지고 있는 SendBuffer.
     /// </summary>
-    private static ThreadLocal<SendBuffer> CurrentBuffer => new ThreadLocal<SendBuffer>(() => { return null!; });
+    private static ThreadLocal<SendBuffer> CurrentBuffer = new ThreadLocal<SendBuffer>(() => { return null!; });
+
+    private static int ChunkSize => 4069 * 10;
 
     /// <summary>
     ///     Open을 통해 예약한 버퍼에 데이터를 복사 후 호출된다.

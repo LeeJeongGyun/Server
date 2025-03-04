@@ -5,15 +5,12 @@ using System.Net.Sockets;
 using System.Text;
 using ServerCore;
 
-internal class GameSession : Session
+internal class GameSession : PacketSession
 {
     /// <inheritdoc/>
     public override void OnConnected(EndPoint endPoint)
     {
-        byte[] buf = Encoding.UTF8.GetBytes("Hello Server");
-        Send(buf);
-
-        Thread.Sleep(1000);
+        Thread.Sleep(3000);
         Disconnect();
     }
 
@@ -24,11 +21,12 @@ internal class GameSession : Session
     }
 
     /// <inheritdoc/>
-    public override int OnRecv(ArraySegment<byte> recvData)
+    public override void OnRecvPacket(ArraySegment<byte> packet)
     {
-        string data = Encoding.UTF8.GetString(recvData.Array!, recvData.Offset, recvData.Count);
-        Console.WriteLine($"Recv Data: {data}");
-        return recvData.Count;
+        int dataSize = BitConverter.ToUInt16(packet.Array, 0);
+        int hp = BitConverter.ToUInt16(packet.Array, 2);
+
+        Console.WriteLine($"DataSize: {dataSize}, Hp: {hp}");
     }
 
     /// <inheritdoc/>

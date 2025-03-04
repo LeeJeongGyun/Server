@@ -5,6 +5,43 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
+public abstract class PacketSession : Session
+{
+    private static readonly short HeaderSize = 2;
+
+    /// <summary>
+    ///     stream으로 온 데이터를 Packet으로 분리하여 컨텐츠로 넘겨주는 역할을 한다.
+    /// </summary>
+    /// <param name="recvData">Packet으로 분리하기 전 StreamData.</param>
+    /// <returns>처리한 데이터 크기.</returns>
+    public override sealed int OnRecv(ArraySegment<byte> recvData)
+    {
+        int processLen = 0;
+        while (true)
+        {
+            // 헤더 파싱
+            if (recvData.Count < processLen + HeaderSize)
+                break;
+
+            ushort dataSize = BitConverter.ToUInt16(recvData.Array, recvData.Offset + processLen);
+
+            if (recvData.Count < processLen + dataSize)
+                break;
+
+            OnRecvPacket(recvData.Slice(processLen, dataSize));
+            processLen += dataSize;
+        }
+
+        return processLen;
+    }
+
+    /// <summary>
+    ///     OnRecv 함수로부터 streamData를 패킷으로 만들어서 컨텐츠로 넘겨주는 함수.
+    /// </summary>
+    /// <param name="packet">Packet 데이터.</param>
+    public abstract void OnRecvPacket(ArraySegment<byte> packet);
+}
+
 /// <summary>
 /// Client와 1:1 매핑이 되는 클래스.
 /// </summary>
