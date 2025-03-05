@@ -40,28 +40,12 @@ internal class ClientSession : PacketSession
         {
         case (ushort)PacketID.PlayerInfoReq:
             {
-                int playerId = BitConverter.ToInt32(packet.Array, count);
-                count += 4;
-                Console.WriteLine($"[SERVER] PlayerId: {playerId}");
+                PlayerInfoReq playerInfoReq = new PlayerInfoReq();
+                playerInfoReq.Deserialize(packet);
 
-                PlayerInfoRes playerInfoRes = new PlayerInfoRes();
-                playerInfoRes._size = 12;
-                playerInfoRes.packetId = (ushort)PacketID.PlayerInfoRes;
-                playerInfoRes.attack = 10;
-                playerInfoRes.hp = 100;
-
-                ArraySegment<byte> buffer = SendBufferHelper.Open(1024);
-                byte[] size = BitConverter.GetBytes(playerInfoRes._size);
-                byte[] pId = BitConverter.GetBytes(playerInfoRes.packetId);
-                byte[] attack = BitConverter.GetBytes(playerInfoRes.attack);
-                byte[] hp = BitConverter.GetBytes(playerInfoRes.hp);
-                Array.Copy(size, 0, buffer.Array, buffer.Offset, size.Length);
-                Array.Copy(pId, 0, buffer.Array, buffer.Offset + size.Length, pId.Length);
-                Array.Copy(attack, 0, buffer.Array, buffer.Offset + size.Length + pId.Length, attack.Length);
-                Array.Copy(hp, 0, buffer.Array, buffer.Offset + size.Length + pId.Length + attack.Length, hp.Length);
-                ArraySegment<byte> sendBuf = SendBufferHelper.Close(size.Length + pId.Length + attack.Length + hp.Length);
-                Send(sendBuf);
+                Console.WriteLine($"[SERVER] PlayerId: {playerInfoReq.playerId}");
             }
+
             break;
         }
     }
@@ -72,20 +56,55 @@ internal class ClientSession : PacketSession
         Console.WriteLine("[SERVER] Send Completed");
     }
 
-    public class Header
+    public abstract class Header
     {
         public ushort _size;
         public ushort packetId;
+
+        public abstract void Deserialize(ArraySegment<byte> buffer);
+
+        public abstract ArraySegment<byte>? Serialize();
     }
 
     public class PlayerInfoReq : Header
     {
         public int playerId;
-    }
 
-    public class PlayerInfoRes : Header
-    {
-        public int attack;
-        public int hp;
+        public PlayerInfoReq()
+        {
+            packetId = (ushort)PacketID.PlayerInfoReq;
+        }
+
+        public override void Deserialize(ArraySegment<byte> buffer)
+        {
+            ushort count = 0;
+            //ushort dataSize = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
+            count += 2;
+            //ushort packetId = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
+            count += 2;
+
+            this.playerId = BitConverter.ToInt32(new ReadOnlySpan<byte>(buffer.Array, buffer.Offset + count, buffer.Count - count));
+            count += 4;
+        }
+
+        public override ArraySegment<byte>? Serialize()
+        {
+            ArraySegment<byte> seg = SendBufferHelper.Open(1024);
+
+            ushort count = 0;
+            bool success = true;
+            Span<byte> sp = new Span<byte>(seg.Array, seg.Offset, seg.Count);
+            count = 2;
+            success &= BitConverter.TryWriteBytes(sp.Slice(count), this.packetId);
+            count += 2;
+            success &= BitConverter.TryWriteBytes(sp.Slice(count), this.playerId);
+            count += 4;
+            success &= BitConverter.TryWriteBytes(sp.Slice(0), count);
+
+            if (success == false)
+                return null;
+            else
+                return SendBufferHelper.Close(count);
+        }
     }
 }

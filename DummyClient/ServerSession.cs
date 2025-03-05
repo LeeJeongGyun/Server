@@ -1,6 +1,7 @@
 ﻿namespace DummyClient;
 
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Text;
 using ServerCore;
 
@@ -18,25 +19,12 @@ internal class ServerSession : PacketSession
     /// </remarks>
     public override void OnConnected(EndPoint endPoint)
     {
-        PlayerInfoReq pInfo = new PlayerInfoReq() { packetId = (ushort)PacketID.PlayerInfoReq, playerId = 1001 };
+        PlayerInfoReq pInfo = new PlayerInfoReq() { playerId = 1001 };
 
-        ArraySegment<byte> seg = SendBufferHelper.Open(1024);
+        ArraySegment<byte>? sendBuf = pInfo.Serialize();
 
-        ushort count = 0;
-        bool success = true;
-        Span<byte> sp = new Span<byte>(seg.Array, seg.Offset, seg.Count);
-        //success &= BitConverter.TryWriteBytes(sp.Slice(count), pInfo._size);
-        count += 2;
-        success &= BitConverter.TryWriteBytes(sp.Slice(count), pInfo.packetId);
-        count += 2;
-        success &= BitConverter.TryWriteBytes(sp.Slice(count), pInfo.playerId);
-        count += 4;
-        success &= BitConverter.TryWriteBytes(sp.Slice(0), count);
-
-        ArraySegment<byte> sendBuf = SendBufferHelper.Close(count);
-
-        if (success)
-            Send(sendBuf);
+        if (sendBuf.HasValue)
+            Send(sendBuf.Value);
         else
             throw new InvalidOperationException("TryWritesBytes 실패");
     }
@@ -73,20 +61,55 @@ internal class ServerSession : PacketSession
         Console.WriteLine($"Transferred Data: {byteOfTransferred}");
     }
 
-    public class Header
+    public abstract class Header
     {
         public ushort _size;
         public ushort packetId;
+
+        public abstract void Deserialize(ArraySegment<byte> buffer);
+
+        public abstract ArraySegment<byte>? Serialize();
     }
 
     public class PlayerInfoReq : Header
     {
         public int playerId;
-    }
 
-    public class PlayerInfoRes : Header
-    {
-        public int attack;
-        public int hp;
+        public PlayerInfoReq()
+        {
+            packetId = (ushort)PacketID.PlayerInfoReq;
+        }
+
+        public override void Deserialize(ArraySegment<byte> buffer)
+        {
+            ushort count = 0;
+            //ushort dataSize = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
+            count += 2;
+            //ushort packetId = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
+            count += 2;
+
+            this.playerId = BitConverter.ToInt32(new ReadOnlySpan<byte>(buffer.Array, buffer.Offset + count, buffer.Count - count));
+            count += 4;
+        }
+
+        public override ArraySegment<byte>? Serialize()
+        {
+            ArraySegment<byte> seg = SendBufferHelper.Open(1024);
+
+            ushort count = 0;
+            bool success = true;
+            Span<byte> sp = new Span<byte>(seg.Array, seg.Offset, seg.Count);
+            count = 2;
+            success &= BitConverter.TryWriteBytes(sp.Slice(count), this.packetId);
+            count += 2;
+            success &= BitConverter.TryWriteBytes(sp.Slice(count), this.playerId);
+            count += 4;
+            success &= BitConverter.TryWriteBytes(sp.Slice(0), (ushort)4);
+
+            if (success == false)
+                return null;
+            else
+                return SendBufferHelper.Close(count);
+        }
     }
 }

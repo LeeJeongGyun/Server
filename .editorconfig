@@ -138,6 +138,8 @@ dotnet_diagnostic.SA1520.severity = none
 dotnet_diagnostic.SA1623.severity = none
 dotnet_diagnostic.SA1633.severity = none
 dotnet_diagnostic.SA1649.severity = none
+dotnet_diagnostic.SA1005.severity = none
+dotnet_diagnostic.SA1515.severity = none
 [*.{cs,vb}]
 #### Naming styles ####
 
