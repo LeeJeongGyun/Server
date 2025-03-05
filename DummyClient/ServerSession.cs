@@ -19,7 +19,7 @@ internal class ServerSession : PacketSession
     /// </remarks>
     public override void OnConnected(EndPoint endPoint)
     {
-        PlayerInfoReq pInfo = new PlayerInfoReq() { playerId = 1001 };
+        PlayerInfoReq pInfo = new PlayerInfoReq() { playerId = 1001, name = "jklee" };
 
         ArraySegment<byte>? sendBuf = pInfo.Serialize();
 
@@ -73,6 +73,7 @@ internal class ServerSession : PacketSession
 
     public class PlayerInfoReq : Header
     {
+        public string name;
         public int playerId;
 
         public PlayerInfoReq()
@@ -83,13 +84,20 @@ internal class ServerSession : PacketSession
         public override void Deserialize(ArraySegment<byte> buffer)
         {
             ushort count = 0;
+            ReadOnlySpan<byte> s = new ReadOnlySpan<byte>(buffer.Array, buffer.Offset, buffer.Count);
             //ushort dataSize = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
-            count += 2;
+            count += sizeof(ushort);
             //ushort packetId = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
-            count += 2;
+            count += sizeof(ushort);
 
-            this.playerId = BitConverter.ToInt32(new ReadOnlySpan<byte>(buffer.Array, buffer.Offset + count, buffer.Count - count));
-            count += 4;
+            this.playerId = BitConverter.ToInt32(s.Slice(count));
+            count += sizeof(int);
+
+            ushort nameLen = BitConverter.ToUInt16(s.Slice(count));
+            count += sizeof(ushort);
+
+            this.name = Encoding.Unicode.GetString(s.Slice(count, nameLen));
+            count += nameLen;
         }
 
         public override ArraySegment<byte>? Serialize()
@@ -99,12 +107,21 @@ internal class ServerSession : PacketSession
             ushort count = 0;
             bool success = true;
             Span<byte> sp = new Span<byte>(seg.Array, seg.Offset, seg.Count);
-            count = 2;
+            count = sizeof(ushort);
             success &= BitConverter.TryWriteBytes(sp.Slice(count), this.packetId);
-            count += 2;
+            count += sizeof(ushort);
             success &= BitConverter.TryWriteBytes(sp.Slice(count), this.playerId);
-            count += 4;
-            success &= BitConverter.TryWriteBytes(sp.Slice(0), (ushort)4);
+            count += sizeof(int);
+
+            // string 내용
+            ushort nameLen = (ushort)Encoding.Unicode.GetBytes(this.name.AsSpan(), sp.Slice(count + sizeof(ushort)));
+            // string 길이
+            success &= BitConverter.TryWriteBytes(sp.Slice(count), nameLen);
+            count += sizeof(ushort);
+            count += nameLen;
+
+            // 패킷 크기
+            success &= BitConverter.TryWriteBytes(sp, count);
 
             if (success == false)
                 return null;
