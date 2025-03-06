@@ -45,6 +45,7 @@ internal class ClientSession : PacketSession
                 PlayerInfoReq playerInfoReq = new PlayerInfoReq();
                 playerInfoReq.Deserialize(packet);
 
+                Console.WriteLine($"[SERVER] testBytes: {playerInfoReq.testByte}");
                 Console.WriteLine($"[SERVER] PlayerId: {playerInfoReq.playerId}");
                 Console.WriteLine($"[SERVER] Player Name: {playerInfoReq.name}");
 
@@ -69,6 +70,7 @@ internal class ClientSession : PacketSession
         public string name;
         public int playerId;
         public List<Skill> skills = new List<Skill>();
+        public byte testByte;
 
         public void Deserialize(ArraySegment<byte> buffer)
         {
@@ -77,6 +79,8 @@ internal class ClientSession : PacketSession
             count += sizeof(ushort);
             count += sizeof(ushort);
 
+            this.testByte = (byte)buffer[buffer.Offset + count];
+            count += sizeof(byte);
             this.playerId = BitConverter.ToInt32(s.Slice(count));
             count += sizeof(int);
             ushort nameLen = BitConverter.ToUInt16(s.Slice(count));
@@ -106,6 +110,8 @@ internal class ClientSession : PacketSession
             success &= BitConverter.TryWriteBytes(sp.Slice(count), (ushort)PacketID.PlayerInfoReq);
             count += sizeof(ushort);
 
+            seg[seg.Offset + count] = this.testByte;
+            count += sizeof(byte);
             success &= BitConverter.TryWriteBytes(sp.Slice(count), this.playerId);
             count += sizeof(int);
             ushort nameLen = (ushort)Encoding.Unicode.GetBytes(this.name.AsSpan(), sp.Slice(count + sizeof(ushort)));

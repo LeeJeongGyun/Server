@@ -1,5 +1,6 @@
 ﻿namespace DummyClient;
 
+using System;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Text;
@@ -20,7 +21,7 @@ internal class ServerSession : PacketSession
     /// </remarks>
     public override void OnConnected(EndPoint endPoint)
     {
-        PlayerInfoReq pInfo = new PlayerInfoReq() { playerId = 1001, name = "jklee" };
+        PlayerInfoReq pInfo = new PlayerInfoReq() { testByte = 20, playerId = 1001, name = "jklee" };
         pInfo.skills.Add(new Skill() { id = 1, level = 10, duration = 10.0f });
         pInfo.skills.Add(new Skill() { id = 2, level = 20, duration = 20.0f });
         pInfo.skills.Add(new Skill() { id = 3, level = 30, duration = 30.0f });
@@ -71,6 +72,7 @@ internal class ServerSession : PacketSession
         public string name;
         public int playerId;
         public List<Skill> skills = new List<Skill>();
+        public byte testByte;
 
         public void Deserialize(ArraySegment<byte> buffer)
         {
@@ -79,6 +81,8 @@ internal class ServerSession : PacketSession
             count += sizeof(ushort);
             count += sizeof(ushort);
 
+            this.testByte = (byte)buffer[buffer.Offset + count];
+            count += sizeof(byte);
             this.playerId = BitConverter.ToInt32(s.Slice(count));
             count += sizeof(int);
             ushort nameLen = BitConverter.ToUInt16(s.Slice(count));
@@ -108,6 +112,8 @@ internal class ServerSession : PacketSession
             success &= BitConverter.TryWriteBytes(sp.Slice(count), (ushort)PacketID.PlayerInfoReq);
             count += sizeof(ushort);
 
+            seg[seg.Offset + count] = this.testByte;
+            count += sizeof(byte);
             success &= BitConverter.TryWriteBytes(sp.Slice(count), this.playerId);
             count += sizeof(int);
             ushort nameLen = (ushort)Encoding.Unicode.GetBytes(this.name.AsSpan(), sp.Slice(count + sizeof(ushort)));

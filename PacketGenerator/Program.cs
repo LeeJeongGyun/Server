@@ -64,8 +64,14 @@ internal class Program
             string type = reader.Name.ToLower();
             switch (type)
             {
-            case "bool":
             case "byte":
+            case "sbyte":
+                memberCode += string.Format(PacketFormat.memberFormat, type, memberName);
+                readCode += string.Format(PacketFormat.ReadByteFormat, memberName, type);
+                writeCode += string.Format(PacketFormat.WriteByteFormat, memberName, type);
+                break;
+
+            case "bool":
             case "short":
             case "ushort":
             case "int":

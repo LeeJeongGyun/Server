@@ -107,6 +107,14 @@ public class {0}
 """;
 
     // {0} 멤버 변수
+    // {1} Type
+    public static string ReadByteFormat =
+"""
+this.{0} = ({1})buffer[buffer.Offset + count];
+count += sizeof({1});
+""";
+
+    // {0} 멤버 변수
     // {1} To~
     // {2} Type
     public static string ReadFormat =
@@ -138,6 +146,14 @@ ushort {0}Len = BitConverter.ToUInt16(s.Slice(count));
 count += sizeof(ushort);
 this.{0} = Encoding.Unicode.GetString(s.Slice(count, {0}Len));
 count += {0}Len;
+""";
+
+    // {0} 멤버 변수
+    // {1} Type
+    public static string WriteByteFormat =
+"""
+seg[seg.Offset + count] = this.{0};
+count += sizeof({1});
 """;
 
     // {0} 멤버 변수
