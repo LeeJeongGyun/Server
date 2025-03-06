@@ -5,6 +5,8 @@ using System.Xml;
 internal class Program
 {
     private static string GenPacketString = string.Empty;
+    private static string packetEnums;
+    private static int packetId = 0;
 
     public static (string member, string read, string write) ParseMemberList(XmlReader reader)
     {
@@ -126,6 +128,11 @@ internal class Program
 
         (string member, string readFormat, string writeFormat) = ParseMembers(reader);
         GenPacketString += string.Format(PacketFormat.packetFormat, packetName, member, readFormat, writeFormat);
+        GenPacketString += Environment.NewLine;
+        GenPacketString += Environment.NewLine;
+
+        packetEnums += string.Format(PacketFormat.packetEnumFormat, $"{packetName}Req", packetId++) + Environment.NewLine + "\t";
+        packetEnums += string.Format(PacketFormat.packetEnumFormat, $"{packetName}Res", packetId++) + Environment.NewLine + "\t";
     }
 
     private static void Main(string[] args)
@@ -146,7 +153,8 @@ internal class Program
                     ParsePacket(reader);
             }
 
-            File.WriteAllText("GenPackets.cs", GenPacketString);
+            string fileText = string.Format(PacketFormat.fileFormat, packetEnums, GenPacketString);
+            File.WriteAllText("GenPackets.cs", fileText);
         }
     }
 

@@ -5,6 +5,24 @@
 /// </summary>
 internal class PacketFormat
 {
+    // {0}: Enum
+    // {1}: 패킷
+    public static string fileFormat =
+"""
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Net;
+using ServerCore;
+
+public enum PacketID
+{{
+    {0}
+}}
+
+{1}
+""";
+
     // {0}: Type
     // {1}: Name
     public static string memberFormat =
@@ -37,6 +55,13 @@ public struct {0}
         return success;
     }}
 }}
+""";
+
+    // {0}: 패킷 이름
+    // {1}: 패킷 번호
+    public static string packetEnumFormat =
+"""
+{0} = {1},
 """;
 
     // {0} : 패킷 이름
