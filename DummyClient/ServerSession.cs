@@ -21,10 +21,10 @@ internal class ServerSession : PacketSession
     public override void OnConnected(EndPoint endPoint)
     {
         PlayerInfoReq pInfo = new PlayerInfoReq() { playerId = 1001, name = "jklee" };
-        pInfo.skillInfoList.Add(new SkillInfo() { id = 1, level = 10, duration = 10.0f });
-        pInfo.skillInfoList.Add(new SkillInfo() { id = 2, level = 20, duration = 20.0f });
-        pInfo.skillInfoList.Add(new SkillInfo() { id = 3, level = 30, duration = 30.0f });
-        pInfo.skillInfoList.Add(new SkillInfo() { id = 4, level = 40, duration = 40.0f });
+        pInfo.skills.Add(new Skill() { id = 1, level = 10, duration = 10.0f });
+        pInfo.skills.Add(new Skill() { id = 2, level = 20, duration = 20.0f });
+        pInfo.skills.Add(new Skill() { id = 3, level = 30, duration = 30.0f });
+        pInfo.skills.Add(new Skill() { id = 4, level = 40, duration = 40.0f });
 
         ArraySegment<byte>? sendBuf = pInfo.Serialize();
 
@@ -70,8 +70,7 @@ internal class ServerSession : PacketSession
     {
         public string name;
         public int playerId;
-
-        public List<SkillInfo> skillInfoList = new List<SkillInfo>();
+        public List<Skill> skills = new List<Skill>();
 
         public void Deserialize(ArraySegment<byte> buffer)
         {
@@ -82,22 +81,19 @@ internal class ServerSession : PacketSession
 
             this.playerId = BitConverter.ToInt32(s.Slice(count));
             count += sizeof(int);
-
             ushort nameLen = BitConverter.ToUInt16(s.Slice(count));
             count += sizeof(ushort);
-
             this.name = Encoding.Unicode.GetString(s.Slice(count, nameLen));
             count += nameLen;
-
             ushort skillLen = BitConverter.ToUInt16(s.Slice(count));
             count += sizeof(ushort);
 
-            skillInfoList.Clear();
+            skills.Clear();
             for (int i = 0; i < skillLen; ++i)
             {
-                SkillInfo skillInfo = new SkillInfo();
-                skillInfo.Deserialize(s, ref count);
-                skillInfoList.Add(skillInfo);
+                Skill skill = new Skill();
+                skill.Deserialize(s, ref count);
+                skills.Add(skill);
             }
         }
 
@@ -111,25 +107,20 @@ internal class ServerSession : PacketSession
             count = sizeof(ushort);
             success &= BitConverter.TryWriteBytes(sp.Slice(count), (ushort)PacketID.PlayerInfoReq);
             count += sizeof(ushort);
+
             success &= BitConverter.TryWriteBytes(sp.Slice(count), this.playerId);
             count += sizeof(int);
-
-            // string 내용
             ushort nameLen = (ushort)Encoding.Unicode.GetBytes(this.name.AsSpan(), sp.Slice(count + sizeof(ushort)));
-            // string 길이
             success &= BitConverter.TryWriteBytes(sp.Slice(count), nameLen);
             count += sizeof(ushort);
             count += nameLen;
-
-            // skillList
-            success &= BitConverter.TryWriteBytes(sp.Slice(count), (ushort)skillInfoList.Count);
+            success &= BitConverter.TryWriteBytes(sp.Slice(count), (ushort)skills.Count);
             count += sizeof(ushort);
 
-            foreach (SkillInfo skillInfo in skillInfoList)
+            foreach (Skill skill in skills)
             {
-                success &= skillInfo.Serialize(sp, ref count);
+                success &= skill.Serialize(sp, ref count);
             }
-
             // 패킷 크기
             success &= BitConverter.TryWriteBytes(sp, count);
 
@@ -139,30 +130,30 @@ internal class ServerSession : PacketSession
                 return SendBufferHelper.Close(count);
         }
 
-        public struct SkillInfo
+        public struct Skill
         {
             public float duration;
             public int id;
             public short level;
 
-            internal void Deserialize(ReadOnlySpan<byte> span, ref ushort count)
+            internal void Deserialize(ReadOnlySpan<byte> s, ref ushort count)
             {
-                this.id = BitConverter.ToInt32(span.Slice(count));
+                this.id = BitConverter.ToInt32(s.Slice(count));
                 count += sizeof(int);
-                this.level = BitConverter.ToInt16(span.Slice(count));
+                this.level = BitConverter.ToInt16(s.Slice(count));
                 count += sizeof(short);
-                this.duration = BitConverter.ToSingle(span.Slice(count));
+                this.duration = BitConverter.ToSingle(s.Slice(count));
                 count += sizeof(float);
             }
 
-            internal bool Serialize(Span<byte> span, ref ushort count)
+            internal bool Serialize(Span<byte> sp, ref ushort count)
             {
                 bool success = true;
-                success &= BitConverter.TryWriteBytes(span.Slice(count), id);
+                success &= BitConverter.TryWriteBytes(sp.Slice(count), this.id);
                 count += sizeof(int);
-                success &= BitConverter.TryWriteBytes(span.Slice(count), level);
+                success &= BitConverter.TryWriteBytes(sp.Slice(count), this.level);
                 count += sizeof(short);
-                success &= BitConverter.TryWriteBytes(span.Slice(count), duration);
+                success &= BitConverter.TryWriteBytes(sp.Slice(count), this.duration);
                 count += sizeof(float);
                 return success;
             }
