@@ -63,34 +63,17 @@ internal class ClientSession : PacketSession
         Console.WriteLine("[SERVER] Send Completed");
     }
 
-    public abstract class Header
-    {
-        public ushort _size;
-        public ushort packetId;
-
-        public abstract void Deserialize(ArraySegment<byte> buffer);
-
-        public abstract ArraySegment<byte>? Serialize();
-    }
-
-    public class PlayerInfoReq : Header
+    public class PlayerInfoReq
     {
         public string name;
         public int playerId;
         public List<SkillInfo> skillInfoList = new List<SkillInfo>();
 
-        public PlayerInfoReq()
-        {
-            packetId = (ushort)PacketID.PlayerInfoReq;
-        }
-
-        public override void Deserialize(ArraySegment<byte> buffer)
+        public void Deserialize(ArraySegment<byte> buffer)
         {
             ushort count = 0;
             ReadOnlySpan<byte> s = new ReadOnlySpan<byte>(buffer.Array, buffer.Offset, buffer.Count);
-            //ushort dataSize = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
             count += sizeof(ushort);
-            //ushort packetId = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
             count += sizeof(ushort);
 
             this.playerId = BitConverter.ToInt32(s.Slice(count));
@@ -114,7 +97,7 @@ internal class ClientSession : PacketSession
             }
         }
 
-        public override ArraySegment<byte>? Serialize()
+        public ArraySegment<byte>? Serialize()
         {
             ArraySegment<byte> seg = SendBufferHelper.Open(1024);
 
@@ -122,7 +105,7 @@ internal class ClientSession : PacketSession
             bool success = true;
             Span<byte> sp = new Span<byte>(seg.Array, seg.Offset, seg.Count);
             count = sizeof(ushort);
-            success &= BitConverter.TryWriteBytes(sp.Slice(count), this.packetId);
+            success &= BitConverter.TryWriteBytes(sp.Slice(count), (ushort)PacketID.PlayerInfoReq);
             count += sizeof(ushort);
             success &= BitConverter.TryWriteBytes(sp.Slice(count), this.playerId);
             count += sizeof(int);
