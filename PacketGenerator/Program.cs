@@ -137,19 +137,22 @@ internal class Program
         GenPacketString += Environment.NewLine;
         GenPacketString += Environment.NewLine;
 
-        packetEnums += string.Format(PacketFormat.packetEnumFormat, $"{packetName}Req", packetId++) + Environment.NewLine + "\t";
-        packetEnums += string.Format(PacketFormat.packetEnumFormat, $"{packetName}Res", packetId++) + Environment.NewLine + "\t";
+        packetEnums += string.Format(PacketFormat.packetEnumFormat, $"{packetName}", packetId++) + Environment.NewLine + "\t";
     }
 
     private static void Main(string[] args)
     {
+        string xmlPath = "PDL.xml";
+        if (args.Length > 0)
+            xmlPath = args[0];
+
         XmlReaderSettings setting = new XmlReaderSettings()
         {
             IgnoreComments = true,
             IgnoreWhitespace = true,
         };
 
-        using (XmlReader reader = XmlReader.Create("PDL.xml", setting))
+        using (XmlReader reader = XmlReader.Create(xmlPath, setting))
         {
             reader.MoveToContent();
 
