@@ -6,7 +6,8 @@ using ServerCore;
 
 public enum PacketID
 {
-    PlayerInfoReq = 0,
+    C2S_PlayerInfoReq = 0,
+	S2C_Test = 1,
 	
 }
 
@@ -19,7 +20,7 @@ internal interface IPacket
     ArraySegment<byte>? Serialize();
 }
 
-public class PlayerInfoReq : IPacket
+public class C2S_PlayerInfoReq : IPacket
 {
     public byte testByte;
 	public int playerId;
@@ -55,7 +56,7 @@ public class PlayerInfoReq : IPacket
 	    }
 	}
 
-    public ushort Protocol => (ushort)PacketID.PlayerInfoReq;
+    public ushort Protocol => (ushort)PacketID.C2S_PlayerInfoReq;
 
     public void Deserialize(ArraySegment<byte> buffer)
     {
@@ -110,6 +111,46 @@ public class PlayerInfoReq : IPacket
 		{
 		    success &= skill.Serialize(sp, ref count);
 		}
+        // 패킷 크기
+        success &= BitConverter.TryWriteBytes(sp, count);
+
+        if (success == false)
+            return null;
+        else
+            return SendBufferHelper.Close(count);
+    }
+}
+
+public class S2C_Test : IPacket
+{
+    public long id;
+
+    public ushort Protocol => (ushort)PacketID.S2C_Test;
+
+    public void Deserialize(ArraySegment<byte> buffer)
+    {
+        ushort count = 0;
+        ReadOnlySpan<byte> s = new ReadOnlySpan<byte>(buffer.Array, buffer.Offset, buffer.Count);
+        count += sizeof(ushort);
+        count += sizeof(ushort);
+
+        this.id = BitConverter.ToInt64(s.Slice(count));
+		count += sizeof(long);
+    }
+
+    public ArraySegment<byte>? Serialize()
+    {
+        ArraySegment<byte> seg = SendBufferHelper.Open(1024);
+
+        ushort count = 0;
+        bool success = true;
+        Span<byte> sp = new Span<byte>(seg.Array, seg.Offset, seg.Count);
+        count = sizeof(ushort);
+        success &= BitConverter.TryWriteBytes(sp.Slice(count), (ushort)PacketID.PlayerInfoReq);
+        count += sizeof(ushort);
+
+        success &= BitConverter.TryWriteBytes(sp.Slice(count), this.id);
+		count += sizeof(long);
         // 패킷 크기
         success &= BitConverter.TryWriteBytes(sp, count);
 

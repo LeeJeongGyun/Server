@@ -1,6 +1,3 @@
-﻿namespace Server.Packet;
-
-using System.Net.Sockets;
 using ServerCore;
 
 internal class PacketManager
@@ -44,24 +41,12 @@ internal class PacketManager
 
         if (_onRecv.TryGetValue(packetId, out var recvAction))
             recvAction.Invoke(session, packet);
-
-        //switch (packetId)
-        //{
-        //case (ushort)PacketID.PlayerInfoReq:
-        //    {
-        //        PlayerInfoReq playerInfoReq = new PlayerInfoReq();
-        //        playerInfoReq.Deserialize(packet);
-
-        //        PacketHandler.PlayerInfoReqHandler(this, playerInfoReq);
-        //    }
-
-        //    break;
-        //}
     }
 
     public void Register()
     {
-        _onRecv.Add((ushort)PacketID.PlayerInfoReq, MakePacket<PlayerInfoReq>);
-        _packetHandler.Add((ushort)PacketID.PlayerInfoReq, PacketHandler.PlayerInfoReqHandler);
+        _onRecv.Add((ushort)PacketID.C2S_PlayerInfoReq, MakePacket<C2S_PlayerInfoReq>);
+		_packetHandler.Add((ushort)PacketID.C2S_PlayerInfoReq, PacketHandler.C2S_PlayerInfoReqHandler);
+		
     }
 }

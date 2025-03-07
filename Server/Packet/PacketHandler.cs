@@ -1,6 +1,4 @@
-﻿namespace Server.Packet;
-
-using ServerCore;
+﻿using ServerCore;
 
 /// <summary>
 ///     자동화 코드에 의해 호출되는 부분.
@@ -8,9 +6,9 @@ using ServerCore;
 /// </summary>
 internal class PacketHandler
 {
-    public static void PlayerInfoReqHandler(PacketSession session, IPacket packet)
+    public static void C2S_PlayerInfoReqHandler(PacketSession session, IPacket packet)
     {
-        PlayerInfoReq? p = packet as PlayerInfoReq;
+        C2S_PlayerInfoReq? p = packet as C2S_PlayerInfoReq;
 
         Console.WriteLine($"[SERVER] testBytes: {p.testByte}");
         Console.WriteLine($"[SERVER] PlayerId: {p.playerId}");

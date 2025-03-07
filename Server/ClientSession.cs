@@ -4,7 +4,6 @@ using System;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Text;
-using Server.Packet;
 using ServerCore;
 
 internal class ClientSession : PacketSession

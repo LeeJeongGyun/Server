@@ -14,11 +14,11 @@ internal class ServerSession : PacketSession
     /// </remarks>
     public override void OnConnected(EndPoint endPoint)
     {
-        PlayerInfoReq pInfo = new PlayerInfoReq() { testByte = 20, playerId = 1001, name = "jklee" };
-        pInfo.skills.Add(new PlayerInfoReq.Skill() { id = 1, level = 10, duration = 10.0f });
-        pInfo.skills.Add(new PlayerInfoReq.Skill() { id = 2, level = 20, duration = 20.0f });
-        pInfo.skills.Add(new PlayerInfoReq.Skill() { id = 3, level = 30, duration = 30.0f });
-        pInfo.skills.Add(new PlayerInfoReq.Skill() { id = 4, level = 40, duration = 40.0f });
+        C2S_PlayerInfoReq pInfo = new C2S_PlayerInfoReq() { testByte = 20, playerId = 1001, name = "jklee" };
+        pInfo.skills.Add(new C2S_PlayerInfoReq.Skill() { id = 1, level = 10, duration = 10.0f });
+        pInfo.skills.Add(new C2S_PlayerInfoReq.Skill() { id = 2, level = 20, duration = 20.0f });
+        pInfo.skills.Add(new C2S_PlayerInfoReq.Skill() { id = 3, level = 30, duration = 30.0f });
+        pInfo.skills.Add(new C2S_PlayerInfoReq.Skill() { id = 4, level = 40, duration = 40.0f });
 
         ArraySegment<byte>? sendBuf = pInfo.Serialize();
 
