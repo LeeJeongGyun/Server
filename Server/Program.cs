@@ -3,6 +3,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Server.Packet;
 using ServerCore;
 
 internal class Program
@@ -11,6 +12,8 @@ internal class Program
 
     private static void Main(string[] args)
     {
+        PacketManager.Instance.Register();
+
         IPHostEntry ipHostEntry = Dns.GetHostEntry(Dns.GetHostName());
 
         IPAddress ipAdr = ipHostEntry.AddressList[0];

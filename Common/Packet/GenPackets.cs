@@ -10,7 +10,16 @@ public enum PacketID
 	
 }
 
-public class PlayerInfoReq
+internal interface IPacket
+{
+    ushort Protocol { get; }
+
+    void Deserialize(ArraySegment<byte> buffer);
+
+    ArraySegment<byte>? Serialize();
+}
+
+public class PlayerInfoReq : IPacket
 {
     public byte testByte;
 	public int playerId;
@@ -45,6 +54,9 @@ public class PlayerInfoReq
 	        return success;
 	    }
 	}
+
+    public ushort Protocol => (ushort)PacketID.PlayerInfoReq;
+
     public void Deserialize(ArraySegment<byte> buffer)
     {
         ushort count = 0;

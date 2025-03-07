@@ -20,6 +20,15 @@ public enum PacketID
     {0}
 }}
 
+internal interface IPacket
+{{
+    ushort Protocol {{ get; }}
+
+    void Deserialize(ArraySegment<byte> buffer);
+
+    ArraySegment<byte>? Serialize();
+}}
+
 {1}
 """;
 
@@ -70,9 +79,12 @@ public struct {0}
     // {3} : 쓰기 포맷
     public static string packetFormat =
 """
-public class {0}
+public class {0} : IPacket
 {{
     {1}
+
+    public ushort Protocol => (ushort)PacketID.{0};
+
     public void Deserialize(ArraySegment<byte> buffer)
     {{
         ushort count = 0;
