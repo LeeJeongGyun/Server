@@ -8,7 +8,7 @@ internal class PacketFormat
     // {0}: Enum
     // {1}: 패킷
     public static string fileFormat =
-"""
+    """
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -30,6 +30,67 @@ internal interface IPacket
 }}
 
 {1}
+""";
+
+    public static string managerFormat =
+    """
+using ServerCore;
+
+internal class PacketManager
+{{
+    #region Singleton
+
+    public static PacketManager _instance;
+
+    public static PacketManager Instance
+    {{
+        get
+        {{
+            if (_instance == null)
+                _instance = new PacketManager();
+
+            return _instance;
+        }}
+    }}
+
+    #endregion Singleton
+
+    private Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>> _onRecv = new Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>>();
+    private Dictionary<ushort, Action<PacketSession, IPacket>> _packetHandler = new Dictionary<ushort, Action<PacketSession, IPacket>>();
+
+    public void MakePacket<T>(PacketSession session, ArraySegment<byte> packet) where T : IPacket, new()
+    {{
+        T pkt = new T();
+        pkt.Deserialize(packet);
+
+        if (_packetHandler.TryGetValue(pkt.Protocol, out var packetAction))
+            packetAction.Invoke(session, pkt);
+    }}
+
+    public void OnRecvPacket(PacketSession session, ArraySegment<byte> packet)
+    {{
+        ushort count = 0;
+        ushort dataSize = BitConverter.ToUInt16(packet.Array, count);
+        count += 2;
+        ushort packetId = BitConverter.ToUInt16(packet.Array, count);
+        count += 2;
+
+        if (_onRecv.TryGetValue(packetId, out var recvAction))
+            recvAction.Invoke(session, packet);
+    }}
+
+    public void Register()
+    {{
+        {0}
+    }}
+}}
+""";
+
+    // {0}: 패킷 이름
+    public static string managerRegisterFormat =
+"""
+_onRecv.Add((ushort)PacketID.{0}, MakePacket<{0}>);
+_packetHandler.Add((ushort)PacketID.{0}, PacketHandler.{0}Handler);
 """;
 
     // {0}: Type

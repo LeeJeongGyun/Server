@@ -4,9 +4,11 @@ using System.Xml;
 
 internal class Program
 {
+    private static string clientRegisterString = string.Empty;
     private static string GenPacketString = string.Empty;
     private static string packetEnums;
     private static int packetId = 0;
+    private static string serverRegisterString = string.Empty;
 
     public static (string member, string read, string write) ParseMemberList(XmlReader reader)
     {
@@ -132,12 +134,19 @@ internal class Program
             return;
         }
 
+        // 패킷 직렬화/역직렬화 클래스 생성
         (string member, string readFormat, string writeFormat) = ParseMembers(reader);
         GenPacketString += string.Format(PacketFormat.packetFormat, packetName, member, readFormat, writeFormat);
         GenPacketString += Environment.NewLine;
         GenPacketString += Environment.NewLine;
 
-        packetEnums += string.Format(PacketFormat.packetEnumFormat, $"{packetName}", packetId++) + Environment.NewLine + "\t";
+        packetEnums += string.Format(PacketFormat.packetEnumFormat, packetName, packetId++) + Environment.NewLine + "\t";
+
+        // 패킷 매니저 클래스 생성
+        if (packetName.StartsWith("C2S_") || packetName.StartsWith("c2s"))
+            serverRegisterString += string.Format(PacketFormat.managerRegisterFormat, packetName) + Environment.NewLine;
+        else
+            clientRegisterString += string.Format(PacketFormat.managerRegisterFormat, packetName) + Environment.NewLine;
     }
 
     private static void Main(string[] args)
@@ -164,6 +173,13 @@ internal class Program
 
             string fileText = string.Format(PacketFormat.fileFormat, packetEnums, GenPacketString);
             File.WriteAllText("GenPackets.cs", fileText);
+
+            clientRegisterString = clientRegisterString.Replace("\n", "\n\t\t");
+            serverRegisterString = serverRegisterString.Replace("\n", "\n\t\t");
+            string clientManagerText = string.Format(PacketFormat.managerFormat, clientRegisterString);
+            File.WriteAllText("ClientPacketManager.cs", clientManagerText);
+            string serverManagerText = string.Format(PacketFormat.managerFormat, serverRegisterString);
+            File.WriteAllText("ServerPacketManager.cs", serverManagerText);
         }
     }
 
